@@ -578,11 +578,9 @@
     });
 
    function getRemoveTarget(object){
-       console.log($(object).children()[0].children);
        possibleElements = $(object).children()[0].children;
 
        for (i = 0; i < possibleElements.length; i++) {
-           console.log(possibleElements[i])
            if (possibleElements[i].nodeType !== 3 && possibleElements[i].className.includes("slide")) {
                return possibleElements[i]
            }
@@ -591,7 +589,6 @@
    }
 
     $(".remove-hover").hover(function () {
-        console.log("Triggered")
         animeTarget = getRemoveTarget(this)
         anime({
             targets: animeTarget,
