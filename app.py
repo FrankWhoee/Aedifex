@@ -78,6 +78,10 @@ def load_search_engine():
                             ingredients=ingredients, count=count, icon=icon)
     writer.commit()
 
+@app.route('/search', methods=['GET', 'POST'])
+def ajaxSearch():
+    return json.dumps(search(request.args.get("v")))
+
 
 def search(term):
     output = []
