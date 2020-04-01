@@ -20,7 +20,8 @@ app = Flask(__name__)
 recipes = []
 icons = []
 
-schema = Schema(title=TEXT(stored=True), path=ID(stored=True), group=TEXT(stored=True), type=KEYWORD(stored=True), icon=ID(stored=True), pattern=STORED, key=STORED, result=STORED)
+schema = Schema(title=TEXT(stored=True), path=ID(stored=True), group=TEXT(stored=True), type=KEYWORD(stored=True),
+                icon=ID(stored=True), pattern=STORED, key=STORED, result=STORED, ingredients=STORED, count=NUMERIC(stored=True))
 if not os.path.exists("whoosh"):
     os.mkdir("whoosh")
 ix = create_in("whoosh", schema)
@@ -53,21 +54,28 @@ def load_icons():
         break
 
 
+# schema = Schema(title=TEXT(stored=True), path=ID(stored=True), group=TEXT(stored=True), type=KEYWORD(stored=True),
+#                 icon=ID(stored=True), pattern=STORED, key=STORED, result=STORED, ingredients=STORED, count=NUMERIC)
+
 def load_search_engine():
     writer = ix.writer()
     for recipe in recipes:
         with open('recipes/' + recipe) as json_file:
             data = json.load(json_file)
-            print(recipe)
             group = data['group'] if 'group' in data else "None"
             type = data['type'] if 'type' in data else "None"
-            icon_path = "icons/" + recipe.replace(".json",".png")
+
+            icon_path = "icons/" + recipe.replace(".json", ".png")
             icon = icon_path if os.path.exists(icon_path) else ""
-            key = data['key'] if 'key' in data else "None"
-            result = data['result']
-            pattern = data['pattern']
+
+            key = data['key'] if 'key' in data else {}
+            result = data['result'] if 'result' in data else {}
+            pattern = data['pattern'] if 'pattern' in data else []
+            ingredients = data['ingredients'] if 'ingredients' in data else (data['ingredient'] if 'ingredient' in data else "")
+            count = data['count'] if 'count' in data else -1
         writer.add_document(title=" ".join([x.capitalize() for x in recipe.replace(".json", "").split("_")]),
-                            path=recipe, pattern=pattern, key=key, result=result, group=group, type=type)
+                            path=recipe, pattern=pattern, key=key, result=result, group=group, type=type,
+                            ingredients=ingredients, count=count, icon=icon)
     writer.commit()
 
 
@@ -80,8 +88,14 @@ def search(term):
             output.append({
                 "title": result['title'],
                 "path": result['path'],
+                "pattern": result['pattern'],
+                "key": result['key'],
+                "result": result['result'],
                 "group": result['group'],
-                "type": result['type']
+                "type": result['type'],
+                "ingredients": result['ingredients'],
+                "count": result['count'],
+                "icon": result['icon'],
             })
     return output
 
@@ -90,5 +104,4 @@ if __name__ == '__main__':
     load_icons()
     load_recipes()
     load_search_engine()
-    print(search("boat"))
-    # app.run(debug=True)
+    app.run(debug=True)
