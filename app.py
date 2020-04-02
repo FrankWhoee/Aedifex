@@ -53,10 +53,6 @@ def load_icons():
         icons.extend(filenames)
         break
 
-
-# schema = Schema(title=TEXT(stored=True), path=ID(stored=True), group=TEXT(stored=True), type=KEYWORD(stored=True),
-#                 icon=ID(stored=True), pattern=STORED, key=STORED, result=STORED, ingredients=STORED, count=NUMERIC)
-
 def load_search_engine():
     writer = ix.writer()
     for recipe in recipes:
@@ -80,8 +76,16 @@ def load_search_engine():
 
 @app.route('/search', methods=['GET', 'POST'])
 def ajaxSearch():
-    return json.dumps(search(request.args.get("v")))
+    return json.dumps(search(request.args.get("term")))
 
+@app.route('/add', methods=['GET', 'POST'])
+def add_item():
+    item = request.args.get("item")
+    amount = request.args.get("amount")
+    if 'user_items' not in session:
+        session['user_items'] = [{'item': item, 'amount':amount}]
+    else:
+        session['user_items'].append({'item': item, 'amount':amount})
 
 def search(term):
     output = []

@@ -396,6 +396,16 @@
         a:active {
             text-decoration: none;
         }
+
+        .overflow-trick {
+            position: absolute;
+            right: 29px;
+        }
+
+        .github-icon{
+            width: 20px
+        }
+
     </style>
 </head>
 <body>
@@ -426,12 +436,16 @@
                 <h2 class="text-white" style="padding-right: 40%">Search</h2>
                 <input class="px-3" type="text" id="search" name="fname" style="border-radius: 20px; border: 0; width: 100%">
                 <br><br>
+                <div style="height: 100%; width: 100%; overflow: hidden">
+                    <div style="overflow-y: scroll; overflow-x: visible; !important; height: 60vh; margin-right: -100px; padding-right: 100px;"
+                         id="search-preview">
+
+                    </div>
+                </div>
+                <br>
                 <div class="row align-items-center">
                     <div class="col text-center">
-                        <a class="button-white" href="#">Search</a>
-                    </div>
-                    <div class="col text-center">
-                        <a class="button-black" href="#">Import Recipes</a>
+                        <a class="button-white" href="#">Import Recipes</a>
                     </div>
                 </div>
             </div>
@@ -623,6 +637,15 @@
         </div>
     </div>
 </div>
+<div class="text-center" style="height: 99vh; width: 99vw">
+    <img src="assets/logo.png" style="width: 20vh;padding-bottom: 35vh; padding-top: 35vh">
+    <div style="height: 10vh">
+        <p class="font-weight-bold day">
+            Made with 🖤 by <a class="light" href="https://frankwhoee.codes">@frank <img src="assets/spacelogo.png" style="height: 2vh;border-radius: 3px"></a>
+        </p>
+        <a href="https://github.com/frankwhoee/aedifex"><img class="github-icon" src="assets/github-icon.svg"></a>
+    </div>
+</div>
 
 <script src="https://code.jquery.com/jquery-3.4.1.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
@@ -632,14 +655,39 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.1.0/anime.min.js"
         integrity="sha256-98Q574VkbV+PkxXCKSgL6jVq9mrVbS7uCdA+vt0sLS8=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+
+
 <script>
     $(document).ready(function () {
-        anime({
-            targets: ".slide",
+        anime.set(".slide",{
             opacity: 0,
             translateX: 0
         });
+
+        setSearchPreviewOpacity()
     });
+
+    function setSearchPreviewOpacity(){
+        $('.add-hover').css({
+            opacity: function () {
+                var elementHeight = $(this).get(0).getBoundingClientRect().top
+                // console.log(elementHeight);
+                // console.log($(window).height())
+                lowbound = $(window).height() * 0.72;
+                topbound = $(window).height() * 0.22;
+                if((elementHeight > lowbound + $(this).height())){
+
+                }else if (elementHeight > lowbound) {
+                    return 1 - ((elementHeight - lowbound) / $(this).height())
+                } else if (elementHeight < topbound) {
+                    return 1 - ((topbound - elementHeight) / $(this).height())
+                } else {
+                    return 1
+                }
+                // return 1 - (elementHeight - scrollTop) / elementHeight;
+            }
+        });
+    }
 
    function getRemoveTarget(object){
        possibleElements = $(object).children()[0].children;
@@ -652,15 +700,61 @@
 
    }
 
+    function getAddTarget(object) {
+        possibleElements = $(object).children()[0].children;
+
+        for (i = 0; i < possibleElements.length; i++) {
+            if (possibleElements[i].nodeType !== 3 && possibleElements[i].className.includes("slide")) {
+                return $(possibleElements[i])
+            }
+        }
+
+    }
+
+    $(window).scroll(function () {
+        setSearchPreviewOpacity()
+    });
+
+    $('#search-preview').scroll(function () {
+        setSearchPreviewOpacity()
+    });
+
+    function setHover(){
+        anime.set('.overflow-trick',{
+            opacity: 0,
+            translateX: 25,
+        });
+
+        $(".add-hover").hover(function () {
+            animeTarget = getRemoveTarget(this);
+            anime({
+                targets: animeTarget,
+                opacity: 1,
+                display: 'initial',
+                translateX: 25,
+            });
+        }, function () {
+            animeTarget = getRemoveTarget(this);
+            anime({
+                targets: animeTarget,
+                opacity: 0,
+                display: 'none',
+                translateX: 0,
+            });
+        });
+    }
+
+
+
     $(".remove-hover").hover(function () {
-        animeTarget = getRemoveTarget(this)
+        animeTarget = getRemoveTarget(this);
         anime({
             targets: animeTarget,
             opacity: 1,
             translateX: 40,
         });
     }, function () {
-        animeTarget = getRemoveTarget(this)
+        animeTarget = getRemoveTarget(this);
         anime({
             targets: animeTarget,
             opacity: 0,
@@ -668,6 +762,28 @@
         });
     });
 
+    $('.add-hover').on('mouseover', function () {
+        var $menuItem = $(this);
+        var $submenuWrapper = getAddTarget(this);
+
+        repeater = setInterval(function () {
+
+
+
+            // grab the menu item's position relative to its positioned parent
+            var menuItemPos = $menuItem.position();
+
+            // place the submenu in the correct position relevant to the menu item
+            $submenuWrapper.css({
+                display: 'initial',
+                top: menuItemPos.top + $submenuWrapper.height() / 1.5
+            });
+        }, 100);
+    });
+
+    $('add-hover').on('mouseout', function(){
+        clearInterval(repeater)
+    })
     //setup before functions
     var typingTimer;                //timer identifier
     var doneTypingInterval = 500;  //time in ms (5 seconds)
@@ -680,17 +796,63 @@
         }
     });
 
-    //user is "finished typing," do something
-    function doneTyping () {
-        console.log("Sent GET");
-        var inputVal = document.getElementById("search").value;
+    /*
+
+    <br>
+    * */
+
+    function add_item(object){
+
         $.ajax({
             type: "GET",
-            url: '/search?v=' + inputVal,
+            url: '/add?item=' + object.attr('id') + '&amount=' + $(object.attr('id') + "_input").value,
             success: function(response){
 
+            }
+        });
 
+    }
 
+    //user is "finished typing," do something
+    function doneTyping () {
+        var inputVal = document.getElementById("search").value;
+        console.log('/search?v=' + inputVal,);
+        $.ajax({
+            type: "GET",
+            url: '/search?term=' + inputVal,
+            success: function(response){
+                $('#search-preview').get(0).innerHTML = '';
+                console.log("Cleared old search results")
+                response = JSON.parse(response);
+                console.log(response);
+                for(i = 0; i < response.length; i++){
+                    var card = document.createElement('div');
+
+                    icon = response[i].icon == "" ? "?" : '<img src="'+response[i].icon+'" style="height: 100%">\n'
+
+                    card.innerHTML = '<div class="card-white add-hover">\n' +
+                        '        <div class="row">\n' +
+                        '            <div class="col-sm-2 center-block">\n' +
+                        '                 ' + icon +
+                        '            </div>\n' +
+                        '            <div class="col-6 text-center">\n' +
+                        '                '+response[i].title+'\n' +
+                        '            </div>\n' +
+                                    '<div class="col amount_input">\n' +
+                        '                            <input class="px-3 text-center" type="text" id="'+response[i].path+ '_input' + '" placeholder="64" name="fname" style="border-radius: 20px; border: black 1px solid; width: 100%">\n' +
+                        '            </div>' +
+                        '            <div class="col-sm-1 slide overflow-trick">\n' +
+                        '                <a href="#" id="'+response[i].path+'" onclick="add_item(this)"><img src="assets/rightarrow.png" style="height: 25px;"></a>\n' +
+                        '            </div>\n' +
+                        '        </div>\n' +
+                        '    </div>'
+
+                    $('#search-preview').get(0).appendChild(card)
+                    $('#search-preview').get(0).appendChild(document.createElement("br"))
+                }
+
+                setSearchPreviewOpacity()
+                setHover()
             }
         });
     }
