@@ -61,15 +61,16 @@ def load_search_engine():
             group = data['group'] if 'group' in data else "None"
             type = data['type'] if 'type' in data else "None"
 
-            icon_path = "icons/" + recipe.replace(".json", ".png")
-            icon = icon_path if os.path.exists(icon_path) else ""
+            icon_path = "icons/" + recipe[recipe.rfind("/") + 1:].replace(".json", ".png")
+            alt_icon_path = "icons/" + recipe[recipe.rfind("/") + 1:].replace(".json", "") + "_side.png"
+            icon = icon_path if os.path.exists(icon_path) else (alt_icon_path if os.path.exists(alt_icon_path) else "")
 
             key = data['key'] if 'key' in data else {}
             result = data['result'] if 'result' in data else {}
             pattern = data['pattern'] if 'pattern' in data else []
             ingredients = data['ingredients'] if 'ingredients' in data else (
                 data['ingredient'] if 'ingredient' in data else "")
-            count = data['count'] if 'count' in data else -1
+            count = data['count'] if 'count' in data else 1
         writer.add_document(title=" ".join([x.capitalize() for x in recipe.replace(".json", "").split("_")]),
                             path=recipe, pattern=pattern, key=key, result=result, group=group, type=type,
                             ingredients=ingredients, count=count, icon=icon)
@@ -83,6 +84,7 @@ def ajaxSearch():
 
 @app.route('/add', methods=['GET', 'POST'])
 def add_item():
+    session['tier'] = 0
     item = request.args.get("item")
     amount = request.args.get("amount")
     if 'user_items' not in session:
@@ -125,6 +127,7 @@ def remove_item():
 
 @app.route('/delete_all', methods=['GET', 'POST'])
 def delete_all_items():
+    session['tier'] = 0
     session['user_items'] = {}
     session['ingredients'] = {}
     return Response(status=204)
@@ -148,6 +151,10 @@ def compile_all(format: str = 'str', type=None):
 def get_all():
     requested_data = request.args.get("type")
     if requested_data is None:
+        if 'user_items' not in session:
+            session['user_items'] = {"oak_wood.json": 420, "redstone.json": 64, "repeater.json": 2,
+                                     "sticky_piston.json": 12}
+            update_ingredients()
         return compile_all()
     elif requested_data == "items":
         return compile_all(type="items")
@@ -166,14 +173,15 @@ def getRecipe(path):
             type = data['type'] if 'type' in data else "None"
             id = path[path.rfind("/") + 1:]
             icon_path = "icons/" + path[path.rfind("/") + 1:].replace(".json", ".png")
-            icon = icon_path if os.path.exists(icon_path) else ""
+            alt_icon_path = "icons/" + path[path.rfind("/") + 1:].replace(".json", "") + "_side.png"
+            icon = icon_path if os.path.exists(icon_path) else (alt_icon_path if os.path.exists(alt_icon_path) else "")
 
             key = data['key'] if 'key' in data else {}
             result = data['result'] if 'result' in data else {}
             pattern = data['pattern'] if 'pattern' in data else []
             ingredients = data['ingredients'] if 'ingredients' in data else (
                 [data['ingredient']] if 'ingredient' in data else [])
-            count = data['result']['count'] if result and 'count' in data['result'] else -1
+            count = data['result']['count'] if result and 'count' in data['result'] else 1
             return {
                 "title": title,
                 "path": path,
@@ -193,7 +201,9 @@ def getRecipe(path):
         type = "base_item"
 
         icon_path = "icons/" + path[path.rfind("/") + 1:].replace(".json", ".png")
-        icon = icon_path if os.path.exists(icon_path) else ""
+        alt_icon_path = "icons/" + path[path.rfind("/") + 1:].replace(".json", "") + "_side.png"
+        icon = icon_path if os.path.exists(icon_path) else (alt_icon_path if os.path.exists(alt_icon_path) else "")
+
         id = path[path.rfind("/") + 1:]
         key = {}
         result = {}
@@ -225,6 +235,7 @@ def nametoId(name):
 
 @app.route('/import', methods=['POST'])
 def import_list():
+    session['tier'] = 0
     data = request.get_data().decode()
     data = data.split("\n")
     delete_all_items()
@@ -235,7 +246,7 @@ def import_list():
             amount = int(amount)
         except:
             try:
-                amount = eval(amount.replace("x","*"))
+                amount = eval(amount.replace("x", "*"))
             except:
                 print("Found invalid line in import.")
                 continue
@@ -246,6 +257,32 @@ def import_list():
 
 def recipe_exists(file):
     return os.path.exists("recipes/" + file)
+
+
+@app.route('/cata', methods=['GET', 'POST'])
+def cata():
+    if 'tier' not in session or session['tier'] == 0:
+        session['original_list'] = session['user_items'].copy()
+        session["tier"] = 0
+    session["tier"] += 1
+    session['user_items'] = session['ingredients']
+    update_ingredients()
+    return compile_all()
+
+
+@app.route('/ana', methods=['GET', 'POST'])
+def ana():
+    if 'tier' not in session or session['tier'] == 0:
+        session['original_list'] = session['user_items'].copy()
+        session["tier"] = 0
+        return Response(status=204)
+    else:
+        session['user_items'] = session['original_list'].copy()
+        session["tier"] -= 1
+        for i in range(0, session['tier']):
+            session['user_items'] = session['ingredients']
+        update_ingredients()
+        return compile_all()
 
 
 def update_ingredients():
@@ -259,20 +296,19 @@ def update_ingredients():
                 data = getRecipe('recipes/' + item)
                 if data["ingredients"]:
                     for ingredient in data["ingredients"]:
+                        recipe_path = itemToRecipePath(ingredient['item'])
+                        added_value = math.ceil(session['user_items'][item]/data["count"])
                         try:
-                            if itemToRecipePath(ingredient['item']) not in session['ingredients']:
-                                session['ingredients'][itemToRecipePath(ingredient['item'])] = session['user_items'][
-                                    item]
+                            if recipe_path not in session['ingredients']:
+                                session['ingredients'][recipe_path] = added_value
                             else:
-                                session['ingredients'][itemToRecipePath(ingredient['item'])] += session['user_items'][
-                                    item]
+                                session['ingredients'][recipe_path] += added_value
                         except KeyError:
-                            if itemToRecipePath(ingredient['tag']) not in session['ingredients']:
-                                session['ingredients'][itemToRecipePath(ingredient['tag'])] = session['user_items'][
-                                    item]
+                            recipe_path = itemToRecipePath(ingredient['tag'])
+                            if recipe_path not in session['ingredients']:
+                                session['ingredients'][recipe_path] = added_value
                             else:
-                                session['ingredients'][itemToRecipePath(ingredient['tag'])] += session['user_items'][
-                                    item]
+                                session['ingredients'][recipe_path] += added_value
                 elif data["key"]:
                     keys = {}
                     for key in data["key"].keys():
@@ -283,23 +319,32 @@ def update_ingredients():
                                 keys[character] += 1
 
                     for key in keys.keys():
-                        ingKey = 'item' if 'item' in data["key"][key] else 'tag'
-                        if itemToRecipePath(data["key"][key][ingKey]) not in session['ingredients']:
-                            session['ingredients'][itemToRecipePath(data["key"][key][ingKey])] = keys[key] * \
-                                                                                                 session['user_items'][
-                                                                                                     item]
+                        recipe_path = ""
+                        added_value = keys[key] * math.ceil(math.ceil((keys[key] * session['user_items'][item])/data["count"])/keys[key])
+                        if type(data["key"][key]) == dict:
+                            ingKey = 'item' if 'item' in data["key"][key] else 'tag'
+                            recipe_path = itemToRecipePath(data["key"][key][ingKey])
+                        elif type(data["key"][key]) == list:
+                            ingKey = 'item' if 'item' in data["key"][key][0] else 'tag'
+                            recipe_path = itemToRecipePath(data["key"][key][0][ingKey])
+                        if recipe_path not in session['ingredients']:
+                            session['ingredients'][recipe_path] = added_value
                         else:
-                            session['ingredients'][itemToRecipePath(data["key"][key][ingKey])] += keys[key] * \
-                                                                                                  session['user_items'][
-                                                                                                      item]
+                            session['ingredients'][recipe_path] += added_value
             else:
                 if item not in session['ingredients']:
                     session['ingredients'][item] = session['user_items'][item]
                 else:
                     session['ingredients'][item] += session['user_items'][item]
 
+@app.route("/last_search", methods=['GET'])
+def get_last_search():
+    if 'last_search' not in session:
+        return ""
+    return session['last_search']
 
 def search(term):
+    session['last_search'] = term
     output = []
     with ix.searcher() as searcher:
         query = QueryParser("title", ix.schema).parse(term)

@@ -440,10 +440,13 @@
         <div class="col py-3">
             <div class="card-red">
                 <h2 class="text-white" style="padding-right: 40%">Search</h2>
-                <input class="px-3" type="text" id="search" name="fname" style="border-radius: 20px; border: 0; width: 100%">
+                <div class="input-group">
+                    <input class="px-3" type="text" id="search" name="fname" style="border-radius: 20px; border: 0; width: 100%">
+                    <a href="#" onclick="clear_search()" style="position: absolute; right: 15px; color: grey; top: 10%">Clear</a>
+                </div>
                 <br><br>
                 <div style="height: 100%; width: 100%; overflow: hidden">
-                    <div class="py-5"
+                    <div class="py-4"
                          style="overflow-y: scroll; overflow-x: visible; !important; height: 70vh; margin-right: -100px; padding-right: 100px;"
                          id="search-preview">
 
@@ -482,13 +485,17 @@
                 </div>
                 <div class="row align-items-center">
                     <div class="col text-center">
-                        <a class="button-black" href="#">Decay</a>
+                        <div class="text-center px-4" data-toggle="tooltip" title="" data-original-title="Breaks down into constituents.">
+                            <a class="button-black" href="#" onclick="cata()"><img src="assets/decay.png" style="height: 30px"></a>
+                        </div>
+                    </div>
+                    <div class="col text-center">
+                        <div class="text-center px-4" data-toggle="tooltip" title="" data-original-title="Undo the break down.">
+                            <a class="button-white" href="#" onclick="ana()"><img src="assets/decaynt.png" style="height: 30px"></a>
+                        </div>
                     </div>
                     <div class="col text-center">
                         <a class="button-green" onclick="exportIngredients()" href="#">Export</a>
-                    </div>
-                    <div class="col text-center">
-                        <a class="button-white" href="#">Tier Up</a>
                     </div>
                 </div>
             </div>
@@ -520,6 +527,26 @@
 
 
 <script>
+    function clear_search() {
+        if(document.getElementById("search").value === ""){
+            Swal.fire({
+                position: 'top',
+                icon: 'warning',
+                title: 'Search box is already clear! :)',
+                showConfirmButton: false,
+                timer: 2000,
+                backdrop: false,
+                toast: true,
+                customClass: {
+                    border: '5px solid black'
+                }
+            })
+        }else{
+            document.getElementById("search").value = "";
+        }
+        doneSearchTyping();
+    }
+
     function exportItems() {
         /* Get the text field */
         var copyElement = document.getElementById("copyboard");
@@ -666,11 +693,10 @@
                 })
             }
         });
-
-
     }
 
     $(document).ready(function () {
+        $('[data-toggle="tooltip"]').tooltip();
         anime.set(".slide",{
             opacity: 0,
             translateX: 0
@@ -700,7 +726,120 @@
                 })
             }
         });
+        $.ajax({
+            type: "GET",
+            url: '/last_search',
+            success: function (response) {
+                document.getElementById("search").value = response;
+                console.log(response)
+                doneSearchTyping();
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        });
     });
+
+    function refresh(){
+        $.ajax({
+            type: "GET",
+            url: '/get',
+            success: function (response) {
+                response = JSON.parse(response);
+                render_items_and_ingredients(response['items'], response['ingredients']);
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        });
+    }
+
+    function cata(){
+        $.ajax({
+            type: "GET",
+            url: '/cata',
+            success: function (response) {
+                response = JSON.parse(response);
+                render_items_and_ingredients(response['items'], response['ingredients']);
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        });
+    }
+
+    function ana(){
+        $.ajax({
+            type: "GET",
+            url: '/ana',
+            success: function (response, textStatus, xhr) {
+                console.log(xhr.status)
+                if (xhr.status === 204){
+                    Swal.fire({
+                        position: 'top',
+                        icon: 'warning',
+                        title: 'You can not tier up an original list!',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        toast: true,
+                        customClass: {
+                            border: '5px solid black'
+                        }
+                    })
+                }else{
+                    response = JSON.parse(response);
+                    render_items_and_ingredients(response['items'], response['ingredients']);
+                }
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        });
+    }
 
 
     function setSearchPreviewOpacity(){
