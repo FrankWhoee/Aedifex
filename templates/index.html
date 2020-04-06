@@ -455,7 +455,9 @@
                 <br>
                 <div class="row align-items-center">
                     <div class="col text-center">
-                        <a class="button-white" href="#">Import Recipes</a>
+                        <div class="text-center px-4" data-toggle="tooltip" title="" data-original-title="Currently not working. Coming soon!">
+                            <a class="button-white" href="#">Import Recipes</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1266,6 +1268,7 @@
     //user is "finished typing," do something
     function doneSearchTyping() {
         var inputVal = document.getElementById("search").value;
+        console.log('/search?term=' + inputVal)
         $.ajax({
             type: "GET",
             url: '/search?term=' + inputVal,
