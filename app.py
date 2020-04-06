@@ -21,6 +21,22 @@ if not os.path.exists("whoosh"):
     os.mkdir("whoosh")
 ix = create_in("whoosh", schema)
 
+
+@app.route('/icons/<path>')
+def send_icons(path):
+    return send_from_directory('icons', path)
+
+
+@app.route('/assets/<path>')
+def send_assets(path):
+    return send_from_directory('assets', path)
+
+
+@app.route('/')
+def index():
+    return render_template("index.html")
+
+
 def load_recipes():
     for (dirpath, dirnames, filenames) in walk("recipes"):
         recipes.extend(filenames)
@@ -31,6 +47,11 @@ def load_icons():
     for (dirpath, dirnames, filenames) in walk("icons"):
         icons.extend(filenames)
         break
+
+
+def itemToRecipePath(item: str):
+    return item[item.find(":") + 1:] + ".json"
+
 
 def load_search_engine():
     print("Loaded search engine")
@@ -55,30 +76,6 @@ def load_search_engine():
                             path=recipe, pattern=pattern, key=key, result=result, group=group, type=type,
                             ingredients=ingredients, count=count, icon=icon)
     writer.commit()
-
-load_icons()
-load_recipes()
-load_search_engine()
-
-@app.route('/icons/<path>')
-def send_icons(path):
-    return send_from_directory('icons', path)
-
-
-@app.route('/assets/<path>')
-def send_assets(path):
-    return send_from_directory('assets', path)
-
-
-@app.route('/')
-def index():
-    return render_template("index.html")
-
-def itemToRecipePath(item: str):
-    return item[item.find(":") + 1:] + ".json"
-
-
-
 
 
 @app.route('/search', methods=['GET', 'POST'])
@@ -372,4 +369,7 @@ def search(term):
 
 
 if __name__ == '__main__':
+    load_icons()
+    load_recipes()
+    load_search_engine()
     app.run(debug=True)
