@@ -54,6 +54,7 @@ def itemToRecipePath(item: str):
 
 
 def load_search_engine():
+    print("Loaded search engine")
     writer = ix.writer()
     for recipe in recipes:
         with open('recipes/' + recipe) as json_file:
@@ -79,6 +80,7 @@ def load_search_engine():
 
 @app.route('/search', methods=['GET', 'POST'])
 def ajaxSearch():
+    print(request.args.get("term"))
     return json.dumps(search(request.args.get("term")))
 
 
@@ -362,6 +364,7 @@ def search(term):
                 "count": result['count'],
                 "icon": result['icon'],
             })
+    print(output)
     return output
 
 
