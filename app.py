@@ -320,6 +320,10 @@ def get_last_search():
 
 def search(term):
     session['last_search'] = term
+
+    if term == "":
+        return []
+
     output = []
     scores = {}
     for recipe in recipes:
