@@ -53,7 +53,6 @@ def load_search_engine():
 
 @app.route('/search', methods=['GET', 'POST'])
 def ajaxSearch():
-    print(request.args.get("term"))
     return json.dumps(search(request.args.get("term")))
 
 
@@ -236,17 +235,21 @@ def recipe_exists(file):
 
 @app.route('/cata', methods=['GET', 'POST'])
 def cata():
+    print("cata tier before = " + str(session['tier']))
     if 'tier' not in session or session['tier'] == 0:
         session['original_list'] = session['user_items'].copy()
         session["tier"] = 0
-    session["tier"] += 1
+    if session['user_items'] != session['ingredients']:
+        session["tier"] += 1
     session['user_items'] = session['ingredients']
     update_ingredients()
+    print("cata tier after = " + str(session['tier']))
     return compile_all()
 
 
 @app.route('/ana', methods=['GET', 'POST'])
 def ana():
+    print("ana tier before = " + str(session['tier']))
     if 'tier' not in session or session['tier'] == 0:
         session['original_list'] = session['user_items'].copy()
         session["tier"] = 0
@@ -255,9 +258,12 @@ def ana():
         session['user_items'] = session['original_list'].copy()
         session["tier"] -= 1
         for i in range(0, session['tier']):
-            session['user_items'] = session['ingredients']
+            update_ingredients()
+            session['user_items'] = session['ingredients'].copy()
+
         update_ingredients()
-        return compile_all()
+    print("ana tier after = " + str(session['tier']))
+    return compile_all()
 
 
 def update_ingredients():
@@ -270,6 +276,20 @@ def update_ingredients():
             if os.path.exists("recipes/" + item):
                 data = getRecipe('recipes/' + item)
                 if data["ingredients"]:
+                    if len(data["ingredients"]) <= 1:
+                        result = getRecipe("recipes/" + itemToRecipePath(data["ingredients"][0]["item"]))
+                        if result["key"] and len(result["key"]) == 1:
+                            valid_continue = False
+                            for key in result["key"].keys():
+                                if result["key"][key]["item"] == data["result"]["item"]:
+                                    if item not in session['ingredients']:
+                                        session['ingredients'][item] = session['user_items'][item]
+                                    else:
+                                        session['ingredients'][item] += session['user_items'][item]
+                                    valid_continue = True
+                            if valid_continue:
+                                continue
+
                     for ingredient in data["ingredients"]:
                         recipe_path = itemToRecipePath(ingredient['item'])
                         added_value = math.ceil(session['user_items'][item]/data["count"])
@@ -340,10 +360,10 @@ def search(term):
     scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     i = 0
     for path,score in scores:
-        if i < 20:
-            output.append(getRecipe(path))
-        else:
+        if i > 50:
             break
+        output.append(getRecipe(path))
+        i += 1
     return output
 
 load_icons()
