@@ -53,7 +53,10 @@ def load_search_engine():
 
 @app.route('/search', methods=['GET', 'POST'])
 def ajaxSearch():
-    return json.dumps(search(request.args.get("term")))
+    if 'limit' in request.args:
+        return json.dumps(search(request.args.get("term"), limit=int(request.args.get("limit"))))
+    else:
+        return json.dumps(search(request.args.get("term")))
 
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -235,7 +238,6 @@ def recipe_exists(file):
 
 @app.route('/cata', methods=['GET', 'POST'])
 def cata():
-    print("cata tier before = " + str(session['tier']))
     if 'tier' not in session or session['tier'] == 0:
         session['original_list'] = session['user_items'].copy()
         session["tier"] = 0
@@ -243,13 +245,11 @@ def cata():
         session["tier"] += 1
     session['user_items'] = session['ingredients']
     update_ingredients()
-    print("cata tier after = " + str(session['tier']))
     return compile_all()
 
 
 @app.route('/ana', methods=['GET', 'POST'])
 def ana():
-    print("ana tier before = " + str(session['tier']))
     if 'tier' not in session or session['tier'] == 0:
         session['original_list'] = session['user_items'].copy()
         session["tier"] = 0
@@ -262,7 +262,13 @@ def ana():
             session['user_items'] = session['ingredients'].copy()
 
         update_ingredients()
-    print("ana tier after = " + str(session['tier']))
+    return compile_all()
+
+@app.route('/ana_complete', methods=['GET', 'POST'])
+def ana_complete():
+    session['user_items'] = session['original_list'].copy()
+    session["tier"] = 0
+    update_ingredients()
     return compile_all()
 
 
@@ -338,7 +344,23 @@ def get_last_search():
         return ""
     return session['last_search']
 
-def search(term):
+@app.route("/show_warning",methods=['GET','POST'])
+def warning_status():
+    if 'show_warning' not in session:
+        session['show_warning'] = True
+    elif request.args.get("set") == "show":
+        session['show_warning'] = True
+    elif request.args.get("set") == "hide":
+        session['show_warning'] = False
+    return str(session['show_warning'])
+
+@app.route("/tier", methods=['GET'])
+def get_tier():
+    if 'tier' not in session:
+        session['tier'] = 0
+    return str(session['tier'])
+
+def search(term, limit=50):
     session['last_search'] = term
 
     if term == "":
@@ -360,7 +382,7 @@ def search(term):
     scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     i = 0
     for path,score in scores:
-        if i > 50:
+        if i > limit:
             break
         output.append(getRecipe(path))
         i += 1

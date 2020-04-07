@@ -344,6 +344,36 @@
             font-weight: bold;
         }
 
+        .toggle-on {
+            background-color: #53d0ff;
+            border: none;
+            color: black;
+            padding: 6px 20px;
+            text-align: center;
+            text-decoration: none;
+            text-transform: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .toggle-off {
+            background-color: #26566d;
+            border: none;
+            color: black;
+            padding: 6px 20px;
+            text-align: center;
+            text-decoration: none;
+            text-transform: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: white;
+        }
+
         .button-black {
             background-color: black;
             border: none;
@@ -427,6 +457,13 @@
                 <a class="nav-link" href="https://feedback.minecraft.net/hc/en-us/articles/360038800232-Minecraft-Java-Edition-1-15-2">Minecraft Java 1.15.2</a>
             </li>
         </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item active">
+                <div class="px-3">
+                    <a class="toggle-on" id="warning-toggle" onclick="turn_off_warnings()" href="#">Turn off warnings</a>
+                </div>
+            </li>
+        </ul>
         <ul class="navbar-nav ml-auto">
             <li class="nav-item">
                 <a class="nav-link" href="" data-target="#myModal" data-toggle="modal">Aedifex v0.0.1</a>
@@ -464,26 +501,29 @@
         </div>
         <div class="col py-3">
             <div class="card-blue">
-                <h2 class="text-white">Items</h2>
-                <div id="items">
+                <h2 class="text-white d-inline-block">Raw Ingredients</h2>
+                <div class="pl-3 d-inline-block text-right" style="float:right">
+                    <a class="button-green" onclick="exportItems()" href="#">Export</a>
+                </div>
+                <div class="px-3 d-inline-block text-right" style="float:right">
+                    <a class="button-light-blue" onclick="import_items()" href="#">Import</a>
+                </div>
+                <div class="pt-4" id="items">
                 </div>
                 <div class="row align-items-center">
                     <div class="col text-center">
                         <a class="button-red" href="#" onclick="delete_all()">Delete All</a>
-                    </div>
-                    <div class="col text-center">
-                        <a class="button-light-blue" onclick="import_items()" href="#">Import</a>
-                    </div>
-                    <div class="col text-center">
-                        <a class="button-green" onclick="exportItems()" href="#">Export</a>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col py-3">
             <div class="card-yellow">
-                <h2 class="text-white">Raw Ingredients</h2>
-                <div id="ingredients">
+                <h2 class="text-white d-inline-block">Raw Ingredients</h2>
+                <div class="d-inline-block text-right" style="float:right">
+                    <a class="button-green" onclick="exportIngredients()" href="#">Export</a>
+                </div>
+                <div class="pt-4" id="ingredients">
                 </div>
                 <div class="row align-items-center">
                     <div class="col text-center">
@@ -492,13 +532,19 @@
                         </div>
                     </div>
                     <div class="col text-center">
-                        <div class="text-center px-4" data-toggle="tooltip" title="" data-original-title="Undo the break down.">
+                        <div class="text-center px-4" data-toggle="tooltip" title="" data-original-title="Undo the last break down.">
                             <a class="button-white" href="#" onclick="ana()"><img src="assets/decaynt.png" style="height: 30px"></a>
                         </div>
                     </div>
                     <div class="col text-center">
-                        <a class="button-green" onclick="exportIngredients()" href="#">Export</a>
+                        <div class="text-center px-4" data-toggle="tooltip" title="" data-original-title="Undo all breakdowns.">
+                            <a class="button-white" href="#" onclick="ana_complete()"><img src="assets/revert.png" style="height: 30px"></a>
+                        </div>
                     </div>
+                </div>
+                <br>
+                <div class="row">
+
                 </div>
             </div>
         </div>
@@ -529,6 +575,60 @@
 
 
 <script>
+    function turn_off_warnings(){
+        $.ajax({
+            type: "GET",
+            url: '/show_warning?set=hide',
+            success: function(response){
+                show_warning = (response === "True")
+                document.getElementById('warning-toggle').setAttribute('onclick','turn_on_warnings()')
+                document.getElementById('warning-toggle').setAttribute('class','toggle-off')
+                document.getElementById('warning-toggle').innerText = "Turn on warnings"
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        });
+    }
+
+    function turn_on_warnings(){
+        $.ajax({
+            type: "GET",
+            url: '/show_warning?set=show',
+            success: function(response){
+                show_warning = (response === "True")
+                document.getElementById('warning-toggle').setAttribute('onclick','turn_off_warnings()')
+                document.getElementById('warning-toggle').setAttribute('class','toggle-on')
+                document.getElementById('warning-toggle').innerText = "Turn off warnings"
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        });
+    }
+
     function clear_search() {
         if(document.getElementById("search").value === ""){
             Swal.fire({
@@ -697,7 +797,36 @@
         });
     }
 
+    show_warning = true
+
     $(document).ready(function () {
+        $.ajax({
+            type: "GET",
+            url: '/show_warning',
+            success: function(response){
+                show_warning = (response === "True")
+                if(show_warning){
+                    turn_on_warnings()
+                }else{
+                    turn_off_warnings()
+                }
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        });
+
         $('[data-toggle="tooltip"]').tooltip();
         anime.set(".slide",{
             opacity: 0,
@@ -843,6 +972,42 @@
         });
     }
 
+    function ana_complete(){
+        $.ajax({
+            type: "GET",
+            url: '/ana_complete',
+            success: function (response) {
+                response = JSON.parse(response);
+                render_items_and_ingredients(response['items'], response['ingredients']);
+                Swal.fire({
+                    position: 'top',
+                    icon: 'success',
+                    title: 'List has been reverted completely.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        });
+    }
+
 
     function setSearchPreviewOpacity(){
         items = document.getElementsByClassName("add-hover")
@@ -962,6 +1127,7 @@
         function doneItemTyping() {
             items = document.getElementsByClassName("item-amount-edit");
             payload = "";
+            amounts = []
             for (var i = 0; i < items.length; i++) {
                 item = items[i].id.substring(0, items[i].id.indexOf("_item_input")).replace("_", " ").replace(".json", "");
 
@@ -1011,13 +1177,74 @@
                 } else {
                     amount = amount + "";
                 }
-
+                amounts.push(amount)
                 payload += item + " [" + amount + "]\n"
             }
+
+            show_history_erase_warning(function(){
+                $.ajax({
+                    type: "POST",
+                    url: '/import',
+                    data: payload,
+                    success: function (response) {
+                        response = JSON.parse(response)
+                        render_items_and_ingredients(response['items'], response['ingredients'])
+                    },
+                    error: function (response) {
+                        Swal.fire({
+                            position: 'top',
+                            icon: 'error',
+                            title: 'Something went wrong when contacting the server.',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            backdrop: false,
+                            toast: true,
+                            customClass: {
+                                border: '5px solid black'
+                            }
+                        })
+                    }
+                });
+            },warning="Changing this amount will erase your history. You won't be able to undo your breakdown."
+                ,confirmation="Yes, change the amount!", cancelfn=function(){
+                    $.ajax({
+                        type: "GET",
+                        url: '/get',
+                        success: function (response) {
+                            response = JSON.parse(response)
+                            render_items_and_ingredients(response['items'], response['ingredients'])
+                        },
+                        error: function (response) {
+                            Swal.fire({
+                                position: 'top',
+                                icon: 'error',
+                                title: 'Something went wrong when contacting the server.',
+                                showConfirmButton: false,
+                                timer: 2000,
+                                backdrop: false,
+                                toast: true,
+                                customClass: {
+                                    border: '5px solid black'
+                                }
+                            })
+                        }
+                    });
+                }
+            )
+        }
+    }
+
+
+    /*
+
+    <br>
+    * */
+
+    function remove_item(object){
+        show_history_erase_warning(fn=function(){
             $.ajax({
-                type: "POST",
-                url: '/import',
-                data: payload,
+                type: "GET",
+                url: '/remove?item=' + $(object).attr('id'),
                 success: function (response) {
                     response = JSON.parse(response)
                     render_items_and_ingredients(response['items'], response['ingredients'])
@@ -1037,59 +1264,42 @@
                     })
                 }
             });
-        }
-    }
+        }, warning="Deleting this item will erase your history. You won't be able to undo your breakdown."
+        , confirmation="Yes, delete this item!")
 
-
-    /*
-
-    <br>
-    * */
-
-    function remove_item(object){
-        $.ajax({
-            type: "GET",
-            url: '/remove?item=' + $(object).attr('id'),
-            success: function (response) {
-                response = JSON.parse(response)
-                render_items_and_ingredients(response['items'], response['ingredients'])
-            },
-            error: function (response) {
-                Swal.fire({
-                    position: 'top',
-                    icon: 'error',
-                    title: 'Something went wrong when contacting the server.',
-                    showConfirmButton: false,
-                    timer: 2000,
-                    backdrop: false,
-                    toast: true,
-                    customClass: {
-                        border: '5px solid black'
-                    }
-                })
-            }
-        });
     }
 
     function delete_all(){
-        $.ajax({
-            type: "GET",
-            url: '/delete_all',
-            success: function(response){
-                $('#items').get(0).innerHTML = '';
-                $('#ingredients').get(0).innerHTML = '';
-            },
-            error: function (response) {
-                Swal.fire({
-                    position: 'top',
-                    icon: 'error',
-                    title: 'Something went wrong when contacting the server.',
-                    showConfirmButton: false,
-                    timer: 2000,
-                    backdrop: false,
-                    toast: true,
-                    customClass: {
-                        border: '5px solid black'
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.value) {
+                $.ajax({
+                    type: "GET",
+                    url: '/delete_all',
+                    success: function(response){
+                        $('#items').get(0).innerHTML = '';
+                        $('#ingredients').get(0).innerHTML = '';
+                    },
+                    error: function (response) {
+                        Swal.fire({
+                            position: 'top',
+                            icon: 'error',
+                            title: 'Something went wrong when contacting the server.',
+                            showConfirmButton: false,
+                            timer: 2000,
+                            backdrop: false,
+                            toast: true,
+                            customClass: {
+                                border: '5px solid black'
+                            }
+                        })
                     }
                 })
             }
@@ -1222,32 +1432,87 @@
         });
     }
 
+    function show_history_erase_warning(fn, warning="Completing this action will erase your history. you won't be able to undo your breakdown.", confirmation="Yes, do it!", cancelfn=function (){}){
+        if(show_warning){
+            $.ajax({
+                type: "GET",
+                url: '/tier',
+                success: function(response){
+                    if(parseInt(response) > 0){
+                        Swal.fire({
+                            title: 'Are you sure?',
+                            text: warning,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: confirmation
+                        }).then((result) => {
+                            if (result.value) {
+                                fn()
+                                return true
+                            }else{
+                                cancelfn()
+                                return false
+                            }
+                        })
+                    }else{
+                        fn()
+                        return true
+                    }
+                },
+                error: function (response) {
+                    cancelfn()
+                    Swal.fire({
+                        position: 'top',
+                        icon: 'error',
+                        title: 'Something went wrong when contacting the server.',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        backdrop: false,
+                        toast: true,
+                        customClass: {
+                            border: '5px solid black'
+                        }
+                    })
+                    return false
+                }
+            });
+        }else{
+            fn()
+        }
+    }
+
 
     function add_item(object){
         amount = document.getElementById($(object).attr('id') + "_input").value;
-        $.ajax({
-            type: "GET",
-            url: '/add?item=' + $(object).attr('id') + '&amount=' + amount,
-            success: function(response){
-                response = JSON.parse(response)
-                render_items_and_ingredients(response['items'], response['ingredients'])
-            },
-            error: function (response) {
-                Swal.fire({
-                    position: 'top',
-                    icon: 'error',
-                    title: 'Something went wrong when contacting the server.',
-                    showConfirmButton: false,
-                    timer: 2000,
-                    backdrop: false,
-                    toast: true,
-                    customClass: {
-                        border: '5px solid black'
-                    }
-                })
-            }
-        });
-
+        show_history_erase_warning(function (){
+            $.ajax({
+                type: "GET",
+                url: '/add?item=' + $(object).attr('id') + '&amount=' + amount,
+                success: function(response){
+                    response = JSON.parse(response)
+                    render_items_and_ingredients(response['items'], response['ingredients'])
+                },
+                error: function (response) {
+                    Swal.fire({
+                        position: 'top',
+                        icon: 'error',
+                        title: 'Something went wrong when contacting the server.',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        backdrop: false,
+                        toast: true,
+                        customClass: {
+                            border: '5px solid black'
+                        }
+                    })
+                }
+            });
+        },
+        warning="Adding this item will erase your history. You won't be able to undo your breakdown.",
+            confirmation="Yes, add this item!"
+        )
     }
 
     //setup before functions
