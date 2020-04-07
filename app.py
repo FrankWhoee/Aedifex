@@ -342,9 +342,9 @@ def search(term):
             break
     return output
 
+load_icons()
+load_recipes()
+load_search_engine()
 
 if __name__ == '__main__':
-    load_icons()
-    load_recipes()
-    load_search_engine()
     app.run(debug=True)
