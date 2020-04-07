@@ -1,9 +1,6 @@
 import os
 import json
 from flask import Flask, request, render_template, send_from_directory, session, flash, redirect, Response
-from whoosh.index import create_in
-from whoosh.fields import *
-from whoosh.qparser import QueryParser
 from os import walk
 import math
 
