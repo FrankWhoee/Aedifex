@@ -14,13 +14,7 @@ app.secret_key = 'Zli6WMDUEboJnp34fzwK'.encode('utf8')
 recipes = []
 icons = []
 
-schema = Schema(title=TEXT(stored=True), path=ID(stored=True), group=TEXT(stored=True), type=KEYWORD(stored=True),
-                icon=ID(stored=True), pattern=STORED, key=STORED, result=STORED, ingredients=STORED,
-                count=NUMERIC(stored=True))
-if not os.path.exists("whoosh"):
-    os.mkdir("whoosh")
-ix = create_in("whoosh", schema)
-
+search_index = []
 
 @app.route('/icons/<path>')
 def send_icons(path):
@@ -35,6 +29,7 @@ def send_assets(path):
 @app.route('/')
 def index():
     return render_template("index.html")
+
 
 
 def load_recipes():
@@ -54,28 +49,9 @@ def itemToRecipePath(item: str):
 
 
 def load_search_engine():
-    print("Loaded search engine")
-    writer = ix.writer()
     for recipe in recipes:
-        with open('recipes/' + recipe) as json_file:
-            data = json.load(json_file)
-            group = data['group'] if 'group' in data else "None"
-            type = data['type'] if 'type' in data else "None"
+        search_index.append(getRecipe(recipe))
 
-            icon_path = "icons/" + recipe[recipe.rfind("/") + 1:].replace(".json", ".png")
-            alt_icon_path = "icons/" + recipe[recipe.rfind("/") + 1:].replace(".json", "") + "_side.png"
-            icon = icon_path if os.path.exists(icon_path) else (alt_icon_path if os.path.exists(alt_icon_path) else "")
-
-            key = data['key'] if 'key' in data else {}
-            result = data['result'] if 'result' in data else {}
-            pattern = data['pattern'] if 'pattern' in data else []
-            ingredients = data['ingredients'] if 'ingredients' in data else (
-                data['ingredient'] if 'ingredient' in data else "")
-            count = data['count'] if 'count' in data else 1
-        writer.add_document(title=" ".join([x.capitalize() for x in recipe.replace(".json", "").split("_")]),
-                            path=recipe, pattern=pattern, key=key, result=result, group=group, type=type,
-                            ingredients=ingredients, count=count, icon=icon)
-    writer.commit()
 
 
 @app.route('/search', methods=['GET', 'POST'])
@@ -348,23 +324,25 @@ def get_last_search():
 def search(term):
     session['last_search'] = term
     output = []
-    with ix.searcher() as searcher:
-        query = QueryParser("title", ix.schema).parse(term)
-        results = searcher.search(query, limit=100)
-        for result in results:
-            output.append({
-                "title": result['title'],
-                "path": result['path'],
-                "pattern": result['pattern'],
-                "key": result['key'],
-                "result": result['result'],
-                "group": result['group'],
-                "type": result['type'],
-                "ingredients": result['ingredients'],
-                "count": result['count'],
-                "icon": result['icon'],
-            })
-    print(output)
+    scores = {}
+    for recipe in recipes:
+        score = 0
+        if term in recipe:
+            score += 20
+        for s in recipe:
+            if s in term:
+                score += 1
+            else:
+                score -= 1
+        if score > 0:
+            scores[recipe] = score
+    scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    i = 0
+    for path,score in scores:
+        if i < 20:
+            output.append(getRecipe(path))
+        else:
+            break
     return output
 
 
