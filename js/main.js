@@ -34,7 +34,7 @@ function correctElements(){
         ingButtonParents.appendChild(document.getElementById("ing-export"))
     }
 
-    if ($(window).width() < 900){
+    if ($(window).width() < 1000){
         document.getElementById("item-row").appendChild(document.getElementById("item-col"))
         document.getElementById("ing-row").appendChild(document.getElementById("ing-col"))
     }else{
