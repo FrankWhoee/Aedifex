@@ -338,7 +338,6 @@
 .toggle-on {
     background-color: #53d0ff;
     border: none;
-    color: black;
     padding: 6px 20px;
     text-align: center;
     text-decoration: none;
@@ -353,7 +352,6 @@
 .toggle-off {
     background-color: #26566d;
     border: none;
-    color: black;
     padding: 6px 20px;
     text-align: center;
     text-decoration: none;

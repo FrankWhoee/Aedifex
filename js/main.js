@@ -349,6 +349,16 @@ $(document).ready(function () {
         }
     });
     correctElements()
+    $.ajax({
+        type: "GET",
+        url: '/version',
+        success: function(response){
+            $("#version").attr("href","https://github.com/FrankWhoee/Aedifex/releases/tag/v" + response);
+            $("#version").text("Aedifex v" + response);
+        }
+    });
+
+
 });
 
 function refresh(){

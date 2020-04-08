@@ -34,6 +34,11 @@ def send_js(path):
 def index():
     return render_template("index.html")
 
+@app.route('/version')
+def get_version():
+    with open('config.json','r') as file:
+        data = json.load(file)
+        return data["version"]
 
 
 def load_recipes():
