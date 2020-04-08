@@ -22,6 +22,13 @@ def send_icons(path):
 def send_assets(path):
     return send_from_directory('assets', path)
 
+@app.route('/style/<path>')
+def send_style(path):
+    return send_from_directory('style', path)
+
+@app.route('/js/<path>')
+def send_js(path):
+    return send_from_directory('js', path)
 
 @app.route('/')
 def index():
@@ -283,7 +290,8 @@ def update_ingredients():
                 data = getRecipe('recipes/' + item)
                 if data["ingredients"]:
                     if len(data["ingredients"]) <= 1:
-                        result = getRecipe("recipes/" + itemToRecipePath(data["ingredients"][0]["item"]))
+                        ingKey = 'item' if 'item' in data["ingredients"][0] else 'tag'
+                        result = getRecipe("recipes/" + itemToRecipePath(data["ingredients"][0][ingKey]))
                         if result["key"] and len(result["key"]) == 1:
                             valid_continue = False
                             for key in result["key"].keys():
@@ -297,19 +305,13 @@ def update_ingredients():
                                 continue
 
                     for ingredient in data["ingredients"]:
-                        recipe_path = itemToRecipePath(ingredient['item'])
+                        ingKey = 'item' if 'item' in ingredient else 'tag'
+                        recipe_path = itemToRecipePath(ingredient[ingKey])
                         added_value = math.ceil(session['user_items'][item]/data["count"])
-                        try:
-                            if recipe_path not in session['ingredients']:
-                                session['ingredients'][recipe_path] = added_value
-                            else:
-                                session['ingredients'][recipe_path] += added_value
-                        except KeyError:
-                            recipe_path = itemToRecipePath(ingredient['tag'])
-                            if recipe_path not in session['ingredients']:
-                                session['ingredients'][recipe_path] = added_value
-                            else:
-                                session['ingredients'][recipe_path] += added_value
+                        if recipe_path not in session['ingredients']:
+                            session['ingredients'][recipe_path] = added_value
+                        else:
+                            session['ingredients'][recipe_path] += added_value
                 elif data["key"]:
                     keys = {}
                     for key in data["key"].keys():
