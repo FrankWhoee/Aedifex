@@ -6,6 +6,7 @@ import math
 
 app = Flask(__name__)
 
+
 app.secret_key = 'Zli6WMDUEboJnp34fzwK'.encode('utf8')
 
 recipes = []
@@ -225,9 +226,13 @@ def nametoId(name):
 @app.route('/import', methods=['POST'])
 def import_list():
     session['tier'] = 0
-    data = request.get_data().decode()
+    data = json.loads(request.get_data().decode())
+    replace = data["replace"]
+    if replace:
+        delete_all_items()
+    data = data["data"]
     data = data.split("\n")
-    delete_all_items()
+
     for line in data:
         item = nametoId(line[0:line.find("[")].strip())
         amount = line[line.find("[") + 1: line.rfind("]")]
@@ -239,7 +244,10 @@ def import_list():
             except:
                 print("Found invalid line in import.")
                 continue
-        session['user_items'][item] = amount
+        if item in session['user_items'] and not replace:
+            session['user_items'][item] += amount
+        else:
+            session['user_items'][item] = amount
     update_ingredients()
     return compile_all()
 

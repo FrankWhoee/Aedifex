@@ -598,12 +598,32 @@ function setHover(){
         clearInterval(repeater)
     })
 
-    $('.item-amount-edit').keyup(function () {
+    prevKeyup = '-1'
+
+    $('.item-amount-edit').keydown(function (e) {
+        var code = (e.which);
+        console.log(code)
+        if(!(code <= 90 && code >= 65)){
+            prevKeyup = code;
+        }
+    });
+
+    $('.item-amount-edit').keyup(function (e) {
+        var code = (e.which);
+        console.log("prev" + prevKeyup + " curr"+code)
+        if(prevKeyup === 17 && code === 65){
+            return;
+        }
+        // do nothing if it's an arrow key
+        if(code === 37 || code === 38 || code === 39 || code === 40 || code === 17) {
+            return;
+        }
         clearTimeout(itemTypingTimer);
         itemTypingTimer = setTimeout(doneItemTyping, doneTypingInterval);
     });
 
     function doneItemTyping() {
+        activeId = document.activeElement.id;
         items = document.getElementsByClassName("item-amount-edit");
         payload = "";
         amounts = []
@@ -664,10 +684,14 @@ function setHover(){
                 $.ajax({
                     type: "POST",
                     url: '/import',
-                    data: payload,
+                    data: JSON.stringify({"data": payload, "replace": true}),
                     success: function (response) {
                         response = JSON.parse(response)
                         render_items_and_ingredients(response['items'], response['ingredients'])
+                        document.getElementById(activeId).focus()
+                        val = document.getElementById(activeId).value
+                        document.getElementById(activeId).value = ''
+                        document.getElementById(activeId).value = val
                     },
                     error: function (response) {
                         Swal.fire({
@@ -710,6 +734,8 @@ function setHover(){
                 });
             }
         )
+
+
     }
 }
 
@@ -786,48 +812,59 @@ function delete_all(){
 }
 
 async function import_items() {
-    Swal.fire({
+    const { value: formValues } = await Swal.fire({
         title: "Import a list of items.",
-        text: "Use the format {ITEM} [AMOUNT] for each item. Each item should be in seperate lines",
-        inputPlaceholder: 'Oak Wood [6 x 64 + 36]\n' +
+        html:
+            '<div id="swal2-content" class="swal2-html-container" style="display: block;">Use the format {ITEM} [AMOUNT] for each item. Each item should be in seperate lines</div>' +
+            '<textarea autocapitalize="off" id="swal2-textarea" class="swal2-textarea" placeholder="Oak Wood [6 x 64 + 36]\n' +
             'Redstone [64]\n' +
             'Repeater [2]\n' +
-            'Sticky Piston [12]',
-        input: 'textarea',
-        inputAttributes: {
-            autocapitalize: 'off'
-        },
+            'Sticky Piston [12]" style="display: flex;" spellcheck="false"></textarea>' +
+            '<div class="row justify-content-center">' +
+                '<div class="col-sm-1">' +
+                    '<input style="display: inline-block;" type="checkbox" value="1" id="swal2-checkbox">' +
+                '</div>' +
+                '<div class="col-sm-auto">' +
+                    '<span class="swal2-label" style="display: inline-block;">Replace current items?</span>' +
+                '</div class="col">' +
+            '</div>',
         showCancelButton: true,
         confirmButtonText: 'Import',
         showLoaderOnConfirm: true,
-        preConfirm: (text) => {
-            $.ajax({
-                type: "POST",
-                url: '/import',
-                data: text,
-                success: function (response) {
-                    response = JSON.parse(response)
-                    render_items_and_ingredients(response['items'], response['ingredients'])
-                },
-                error: function (response) {
-                    Swal.fire({
-                        position: 'top',
-                        icon: 'error',
-                        title: 'Something went wrong when contacting the server.',
-                        showConfirmButton: false,
-                        timer: 2000,
-                        backdrop: false,
-                        toast: true,
-                        customClass: {
-                            border: '5px solid black'
-                        }
-                    })
-                }
-            });
+        preConfirm: () => {
+            return [
+                document.getElementById('swal2-textarea').value,
+                document.getElementById('swal2-checkbox').checked
+            ]
+
         },
         allowOutsideClick: () => !Swal.isLoading()
-    }).then((result) => {
-        if (result.value) {
+    })
+
+    if (formValues) {
+        $.ajax({
+            type: "POST",
+            url: '/import',
+            data: JSON.stringify({"data":formValues[0],"replace":formValues[1]}),
+            success: function (response) {
+                response = JSON.parse(response)
+                render_items_and_ingredients(response['items'], response['ingredients'])
+            },
+            error: function (response) {
+                Swal.fire({
+                    position: 'top',
+                    icon: 'error',
+                    title: 'Something went wrong when contacting the server.',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    backdrop: false,
+                    toast: true,
+                    customClass: {
+                        border: '5px solid black'
+                    }
+                })
+            }
+        }).then(function(){
             Swal.fire({
                 position: 'top',
                 icon: 'success',
@@ -840,8 +877,8 @@ async function import_items() {
                     border: '5px solid black'
                 }
             })
-        }
-    })
+        })
+    }
 }
 
 function render_items_and_ingredients(items, ingredients) {
@@ -997,7 +1034,7 @@ function add_item(object){
 //setup before functions
 var searchTypingTimer;                //timer identifier
 var itemTypingTimer;                //timer identifier
-var doneTypingInterval = 100;  //time in ms (5 seconds)
+var doneTypingInterval = 150;  //time in ms (5 seconds)
 
 //on keyup, start the countdown
 $('#search').keyup(function () {
