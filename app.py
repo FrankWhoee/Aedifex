@@ -162,8 +162,9 @@ def getRecipe(path):
             type = data['type'] if 'type' in data else "None"
             id = path[path.rfind("/") + 1:]
             icon_path = "icons/" + path[path.rfind("/") + 1:].replace(".json", ".png")
-            alt_icon_path = "icons/" + path[path.rfind("/") + 1:].replace(".json", "") + "_side.png"
-            icon = icon_path if os.path.exists(icon_path) else (alt_icon_path if os.path.exists(alt_icon_path) else "")
+            alt_icon_path = "icons/" + path[path.rfind("/") + 1:].replace(".json", "") + "_front.png"
+            alt_alt_icon_path = "icons/" + path[path.rfind("/") + 1:].replace(".json", "") + "_side.png"
+            icon = icon_path if os.path.exists(icon_path) else (alt_icon_path if os.path.exists(alt_icon_path) else (alt_alt_icon_path if os.path.exists(alt_alt_icon_path) else ""))
 
             key = data['key'] if 'key' in data else {}
             result = data['result'] if 'result' in data else {}
